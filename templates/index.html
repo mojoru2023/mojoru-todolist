@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todolist</title>
+    <style>
+                body {
+            font-family: Arial, sans-serif;
+            display: flex; /* 使用flexbox进行布局 */
+            justify-content: center; /* 水平居中 */
+            align-items: center; /* 垂直居中 */
+            height: 100vh; /* 高度为视口高度 */
+            margin: 0; /* 移除默认边距 */
+            background-color: #f9f9f9;
+        }
+        .container {
+            border: 1px solid #cccccc;
+            border-radius: 10px; /* 调整边角圆度 */
+            padding: 20px;
+            max-width: 900px;
+            width: 90%; /* 让容器宽度适应屏幕 */
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1); /* 添加阴影效果 */
+            box-sizing: border-box; /* 包括padding和border在内的宽度计算 */
+        }
+        .logo {
+            display: block;
+            margin: 0 auto 20px; /* 居中并增加底部间距 */
+            width: 120px; /* 控制Logo的宽度，放大 */
+        }
+        h1 {
+            text-align: center; /* 让标题文字居中 */
+            color: #333; /* 调整文字颜色 */
+        }
+        textarea {
+            width: 100%;
+            height: 650px; /* 高度增加 */
+            margin-bottom: 10px;
+            padding: 10px; /* 增加内边距 */
+            box-sizing: border-box; /* 使得padding和border包含在宽度内 */
+            border: 1px solid #cccccc; /* 边框样式 */
+            border-radius: 5px; /* 边角圆度 */
+            font-size: 16px; /* 字体大小 */
+            resize: none; /* 禁用拉伸 */
+            background-color: rgb(199, 237, 204); /* 设置文本区背景色 */
+        }
+        .button-container {
+            text-align: right; /* 让按钮靠右对齐 */
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px; /* 字体大小 */
+            transition: background-color 0.3s; /* 增加过渡效果 */
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .message {
+            color: #4CAF50; /* 成功提示的文字颜色 */
+            text-align: center; /* 文本居中 */
+            margin-top: 10px; /* 上边距 */
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="https://static-00.iconduck.com/assets.00/smiling-face-with-sunglasses-emoji-256x256-6jdawp93.png" alt="Logo" class="logo">
+
+        <h1>Todolist</h1>
+        <textarea id="content" placeholder="输入待办事项内容..."></textarea>
+        <button id="save-button">保存待办事项</button>
+        <div id="message" class="message"></div> <!-- 提示信息区域 -->
+
+    </div>
+
+    <script>
+        // 获取待办事项并显示在文本框中
+        function fetchTodos() {
+            fetch('/todos')
+                .then(response => response.json())
+                .then(data => {
+                    const contentArea = document.getElementById('content');
+                    contentArea.value = data.map(todo => todo.content).join('\n'); // 将每个待办事项以换行符连接
+                })
+                .catch(err => console.error('获取待办事项失败:', err));
+        }
+
+       // 保存所有待办事项
+document.getElementById('save-button').addEventListener('click', () => {
+    const content = document.getElementById('content').value.split('\n'); // 按照换行符分割
+    
+    // 过滤掉空白的待办事项
+    const todos = content.filter(item => item.trim() !== '').map(item => ({ content: item })); 
+
+    if (todos.length === 0) {
+        alert('请填写至少一个待办事项。');
+        return;
+    }
+
+    // 清空数据库中的所有待办事项，并插入新的待办事项
+    fetch('/save', {
+        method: 'DELETE' // 假设后端支持删除所有待办事项
+    })
+    .then(() => {
+        return fetch('/save', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(todos)
+        });
+    })
+    .then(response => response.json())
+    .then(() => {
+        fetchTodos(); // 更新待办事项列表
+        // 显示保存成功的信息
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = '保存成功'; // 显示成功提示
+        messageDiv.style.color = '#4CAF50'; // 设置成功提示颜色
+    })
+    .catch(err => {
+        console.error('保存待办事项失败:', err);
+        const messageDiv = document.getElementById('message');
+        messageDiv.textContent = '保存失败，请重试'; // 显示错误提示
+        messageDiv.style.color = 'red'; // 设置错误提示颜色
+    });
+});
+
+        // 页面加载时获取待办事项
+        window.onload = fetchTodos;
+    </script>
+</body>
+</html>
